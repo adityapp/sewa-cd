@@ -8,7 +8,7 @@ const adminMidleware = require('../midleware/adminMidleware')
 
 router.get('/users', loginMidleware, adminMidleware, async (req, res) => {
     try {
-        const [rows, fields] = await db.connection.execute("SELECT * FROM users;")
+        const [rows, fields] = await db.connection.execute("SELECT * FROM users WHERE `type` = 'user';")
         res.json(rows)
     } catch (err) {
         console.log(err)
@@ -43,7 +43,7 @@ router.post('/login', async (req, res) => {
                 id: rows[0].id,
                 type: rows[0].type
             }, "minhug8gf75de6w47r58tg7yh8uj")
-            res.json({token})
+            res.json({token: token, type : rows[0].type})
         } else {
             res.status(401).json({
                 status: "Unautorized"
