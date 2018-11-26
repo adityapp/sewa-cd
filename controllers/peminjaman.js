@@ -18,11 +18,21 @@ router.get("/peminjaman", loginMidleware, async (req, res) => {
 router.post('/peminjaman', async (req, res) => {
     try {
         const body = req.body
-        const cek = await db.connection.execute("SELECT stock FROM `cd` where `id`=?;", [body.cd_id])
+        const cd = await db.connection.execute("SELECT * FROM `cd` where `id`=?;", [body.cd_id])
+        let discounts= []
+        let discount = 0
+        if(body.discount_id != null){
+            discounts = await db.connection.execute("SELECT * FROM `discounts` where `code`=?;", [body.discount_id])
+            discount = discounts[0][0].discount
+        }
+        const timeStart = new Date()
+        const timeEnd = new Date(body.time_end)
+        const hari = Math.round((timeEnd - timeStart)/ 86400000)
+        const total = cd[0][0].harga * hari - discount
 
-        if (cek[0][0].stock > 0) {
-            const [rows, fields] = await db.connection.execute("INSERT INTO `peminjaman`(`user_id`, `cd_id`, `time_start`, `time_end`, `price`, `denda`, `discount`, `total`) VALUES (?,?,?,?,?,?,?,?);",
-                [body.user_id, body.cd_id, body.time_start, body.time_end, body.price, body.denda, body.discount, body.total])
+        if (cd[0][0].stock > 0) {
+            const [rows, fields] = await db.connection.execute("INSERT INTO `peminjaman`(`user_id`, `cd_id`, `discount_id`, `time_start`, `time_end`, `time_return`, `denda`, `total`) VALUES (?,?,?,NOW(),?,null,0,?);",
+                [body.user_id, body.cd_id, body.discount_id, body.time_end, total])
             res.json(rows)
         } else {
             res.status(400).json({
@@ -37,11 +47,16 @@ router.post('/peminjaman', async (req, res) => {
     }
 })
 
-router.put('/peminjaman/:id', async (req, res) => {
+router.put('/pengembalian/:id', async (req, res) => {
     try {
         const body = req.body
-        const [rows, fields] = await db.connection.execute("UPDATE `peminjaman` SET `user_id`=?,`cd_id`=?,`time_start`=?,`time_end`=?,`price`=?,`denda`=?,`discount`=?,`total`=? WHERE `id`=?;",
-            [body.user_id, body.cd_id, body.time_start, body.time_end, body.price, body.denda, body.discount, body.total, req.params.id])
+        const timeReturn = new Date(body.time_return)
+        const timeEnd = new Date(body.time_end)
+        const hari = Math.round((timeReturn - timeEnd)/ 86400000)
+        const total = body.total + (1000 * hari)
+
+        const [rows, fields] = await db.connection.execute("UPDATE `peminjaman` SET `time_end`=?,`time_return`=?,`denda`=?,`total`=? WHERE `id`=?;",
+            [body.time_end, body.time_return, 1000*hari, total, req.params.id])
         res.json(rows)
     } catch (err) {
         console.log(err)

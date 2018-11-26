@@ -19,8 +19,8 @@ router.get("/discount", async (req, res) => {
 router.post('/discount', loginMidleware, adminMidleware, async (req, res) => {
     try {
         const body = req.body
-        const [rows, fields] = await db.connection.execute("INSERT INTO `discounts`(`code`, `quota`, `discount`) VALUES (?,?,?);",
-            [body.code, body.quota, body.discount])
+        const [rows, fields] = await db.connection.execute("INSERT INTO `discounts`(`code`, `discount`) VALUES (?,?);",
+            [body.code, body.discount])
         res.json(rows)
     } catch (err) {
         console.log(err)
@@ -33,8 +33,8 @@ router.post('/discount', loginMidleware, adminMidleware, async (req, res) => {
 router.put('/discount/:code', loginMidleware, adminMidleware, async (req, res) => {
     try {
         const body = req.body
-        const [rows, fields] = await db.connection.execute("UPDATE `discounts` SET `code`=?,`quota`=?,`discount`=? WHERE `code`=?;",
-            [body.code, body.quota, body.discount, req.params.code])
+        const [rows, fields] = await db.connection.execute("UPDATE `discounts` SET `code`=?,`discount`=? WHERE `code`=?;",
+            [body.code, body.discount, req.params.code])
         res.json(rows)
     } catch (err) {
         console.log(err)
