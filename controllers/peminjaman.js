@@ -2,10 +2,23 @@ const express = require('express')
 const router = express.Router()
 const db = require('../db')
 const loginMidleware = require('../midleware/loginMidleware')
+const adminMidleware = require('../midleware/adminMidleware')
 
 router.get("/peminjaman", loginMidleware, async (req, res) => {
     try {
         const [rows, fields] = await db.connection.execute("SELECT * FROM peminjaman WHERE `user_id`=?;", [req.user.id])
+        res.json(rows)
+    } catch (err) {
+        console.log(err)
+        res.status(500).json({
+            status: "ERROR BRO"
+        })
+    }
+})
+
+router.get("/allpeminjaman", loginMidleware, adminMidleware, async (req, res) => {
+    try {
+        const [rows, fields] = await db.connection.execute("SELECT * FROM peminjaman;")
         res.json(rows)
     } catch (err) {
         console.log(err)
@@ -47,7 +60,7 @@ router.post('/peminjaman', async (req, res) => {
     }
 })
 
-router.put('/pengembalian/:id', async (req, res) => {
+router.put('/pengembalian/:id', loginMidleware, adminMidleware, async (req, res) => {
     try {
         const body = req.body
         const timeReturn = new Date(body.time_return)
